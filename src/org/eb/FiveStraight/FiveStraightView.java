@@ -137,10 +137,10 @@ public class FiveStraightView extends ApplicationWindow {
       public void keyPressed(KeyEvent e) {
         if ((e.stateMask & SWT.CTRL) != 0) {
           if (((char) e.keyCode) == 's') {
-            FSM.SaveGame("data/s.txt");
+            FSM.SaveGame("/temp/s.txt");
           }
           if (((char) e.keyCode) == 'l') {
-            FSM.LoadGame("data/s.txt");
+            FSM.LoadGame("/temp/s.txt");
             canvas.redraw();
             String msg = String.format("Mein Zug:%d GWOffen:%d Val:%d c:(%d,%d,%d,%d) s:(%d,%d,%d,%d)", FSM.ss.letzterzug,
                     FSM.ss.groffen, FSM.ss.wertDerStellung, FSM.ss.cvier, FSM.ss.cdrei, FSM.ss.czwei, FSM.ss.ceins,
