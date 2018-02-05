@@ -314,7 +314,7 @@ public class FiveStraightView extends ApplicationWindow {
     public ActionNeuesSpiel() {
       super("&Neues Spiel@Ctrl+N", AS_PUSH_BUTTON);
       setToolTipText("Neues Spiel starten");
-      setImageDescriptor(ImageDescriptor.createFromFile(null, "NeuesSpiel.gif"));
+      setImageDescriptor(ImageDescriptor.createFromFile(null, "src/org/eb/FiveStraight/icons/NeuesSpiel.gif"));
     }
 
     @Override
