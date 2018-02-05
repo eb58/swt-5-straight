@@ -324,7 +324,7 @@ public class FiveStraightView extends ApplicationWindow {
       sh.setCursor(null);
       canvas.redraw();
       sm.setMessage("Neues Spiel gestartet!!");
-    } 
+    }
   }
 
   class ActionZugZurueckNehmen extends Action {
