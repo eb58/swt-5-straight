@@ -1,10 +1,7 @@
 package org.eb.FiveStraight.model;
 
-
-
 import org.eb.FiveStraight.util.TypeOfWinningRow;
 import org.eb.FiveStraight.util.ValuesOfFields;
-import org.eb.FiveStraight.model.WinningRows;
 import org.eb.FiveStraight.util.Constants;
 import java.util.ArrayList;
 
@@ -175,7 +172,7 @@ public final class StateOfGame implements Cloneable {
     int row = fieldNumber / Constants.NUMBEROFROWS;
     int col = fieldNumber % Constants.NUMBEROFCOLUMNS;
 
-    if (numberOfFieldsOccupied <= 1 
+    if (numberOfFieldsOccupied <= 1
             && Math.abs(row + 1 - Constants.NUMBEROFROWS / 2) <= 1
             && Math.abs(col + 1 - Constants.NUMBEROFCOLUMNS / 2) <= 1) {
       return true;
