@@ -18,8 +18,7 @@ public class FiveStraightModel {
   
   // ///////////////////////////////////////////////////////
   public FiveStraightModel() {
-    WinningRows.initWinningRows();
-    WinningRows.initNeighbours();
+    WinningRows.init();
     ss = new StateOfGame();
     moves = new ArrayList<>();
     player1Begins = true;

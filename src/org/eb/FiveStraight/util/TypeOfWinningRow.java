@@ -1,6 +1,6 @@
 package org.eb.FiveStraight.util;
 
-public enum ValuesOfWinningRows {
+public enum TypeOfWinningRow {
   PLAYER1, EMPTY, PLAYER2, NEUTRAL
 };
 
