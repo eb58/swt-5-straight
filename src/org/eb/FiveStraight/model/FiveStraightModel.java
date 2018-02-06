@@ -1,14 +1,13 @@
 package org.eb.FiveStraight.model;
 
-
 import org.eb.FiveStraight.util.ValuesOfFields;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.List;
 
 // ///////////////////////////////////////////////////////////////////////////////////////////////
 public class FiveStraightModel {
@@ -33,16 +32,25 @@ public class FiveStraightModel {
   }
 
   public void moveOfComputer() {
-      StateOfGame.nodesInTreeOfGame = 0;
-      long start = System.currentTimeMillis();
-      //FiveStraightHashTab.iniths();
-      makeMove(ss.bestMove());
+    long start = System.currentTimeMillis();
+    StateOfGame.nodesInTreeOfGame = 0;
+    //FiveStraightHashTab.iniths();
+    makeMove(ss.bestMove());
+
+    { // compute time and print time and statistics
       long end = System.currentTimeMillis();
       long tdiff = (end - start) + 1;
-      
-      String s = String.format("INFO:Tiefe:%d Knoten:%d Zug:%d Val:%d MilliSec:%d Knoten/Sec:%d", ss.maxLevel,
-              StateOfGame.nodesInTreeOfGame, ss.bestMove, ss.valueOfPlayingPosition, tdiff, StateOfGame.nodesInTreeOfGame * 1000 / tdiff);
+
+      String s = String.format("INFO:Tiefe:%d Knoten:%d Zug:%d Val:%d MilliSec:%d Knoten/Sec:%d",
+              ss.maxLevel,
+              StateOfGame.nodesInTreeOfGame,
+              ss.bestMove,
+              ss.valueOfPlayingPosition,
+              tdiff,
+              StateOfGame.nodesInTreeOfGame * 1000 / tdiff
+      );
       System.out.println(s);
+    }
   }
 
   // //////////////////////////////////////////////////////// /
@@ -51,16 +59,13 @@ public class FiveStraightModel {
       return;
     }
 
+    List<Integer>oldMoves =  moves.subList(0, moves.size() - 2);
+    
     ss.init(player1Begins ? ValuesOfFields.PLAYER1 : ValuesOfFields.PLAYER2);
-
-    ArrayList<Integer> oldzuege = new ArrayList<>();
-    for (Integer I : moves) {
-      oldzuege.add(I);
-    }
     moves = new ArrayList<>();
-    int n = oldzuege.size() - 2;
-    for (int i = 0; i < n; i++) {
-      makeMove(oldzuege.get(i));
+    
+    for (int move : oldMoves) {
+      makeMove(move);
     }
   }
 
@@ -72,25 +77,20 @@ public class FiveStraightModel {
     }
     s = s.trim();
 
-    try {
-      PrintWriter pwr = new PrintWriter(new FileWriter(fname));
+    try (PrintWriter pwr = new PrintWriter(new FileWriter(fname))) {
       pwr.println(s);
-      pwr.close();
     } catch (IOException e) {
+      return 0;
     }
     return 1;
   }
 
-   public int loadGame(final String fname) {
+  public int loadGame(final String fname) {
     String s = "";
-    try {
-      LineNumberReader lnr = new LineNumberReader(new FileReader(fname));
+    try (LineNumberReader lnr = new LineNumberReader(new FileReader(fname))) {
       s = lnr.readLine();
-      lnr.close();
-    } catch (FileNotFoundException e) {
-      e.printStackTrace();
-    } catch (IOException e) {
-      e.printStackTrace();
+    } catch (Exception e) {
+      return 0;
     }
     String arr[] = s.split(" ");
 
