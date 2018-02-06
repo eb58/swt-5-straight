@@ -15,7 +15,7 @@ public class FiveStraightModel {
   private ArrayList<Integer> moves;	// Spielverlauf
   public boolean player1Begins;
   public StateOfGame ss;
-
+  
   // ///////////////////////////////////////////////////////
   public FiveStraightModel() {
     WinningRows.initWinningRows();
