@@ -1,11 +1,12 @@
 package org.eb.FiveStraight;
 
+import org.eb.FiveStraight.model.FiveStraightModel;
+import org.eb.FiveStraight.util.Constants;
 import java.util.Arrays;
+import org.eb.FiveStraight.util.ValuesOfFields;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
-import org.eclipse.swt.events.MouseEvent;
-import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.graphics.Cursor;
@@ -24,56 +25,35 @@ import org.eclipse.jface.action.StatusLineManager;
 import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.window.ApplicationWindow;
+import org.eclipse.swt.events.MouseAdapter;
+import org.eclipse.swt.events.MouseEvent;
 
 public class FiveStraightView extends ApplicationWindow {
 
   FiveStraightModel FSM;
-  StatusLineManager sm;
   Canvas canvas;
-  Shell sh;
+  Shell shell;
   Display display;
   Cursor waitCursor;
+  StatusLineManager statusbarManager;
 
-  // /////////////////////////////////////////////////////////////////////////////////////
-  ActionNeuesSpiel act_NeuesSpiel = new ActionNeuesSpiel();
-  ActionBeenden act_Beenden = new ActionBeenden();
-  ActionZugZurueckNehmen act_ZugZurueckNehmen = new ActionZugZurueckNehmen();
+  ActionNewGame action_NewGame = new ActionNewGame();
+  ActionUndoMove action_UndoMove = new ActionUndoMove();
+  ActionStopPlaying action_StopPlaying = new ActionStopPlaying();
 
-  // /////////////////////////////////////////////////////////////////////////////////////
-  void MessageBox(String title, String msg) {
-    MessageBox mb = new MessageBox(sh, SWT.OK);
+  private void myMessageBox(String title, String msg) {
+
+    display.beep();
+    statusbarManager.setMessage(msg);
+
+    MessageBox mb = new MessageBox(shell, SWT.OK);
     mb.setText(title);
     mb.setMessage(msg);
     mb.open();
   }
 
-  class SpielFeldPaintListener implements PaintListener {
-
-    @Override
-    public void paintControl(PaintEvent e) {
-      int w = canvas.getClientArea().width / Globals.SANZ;
-      int h = canvas.getClientArea().height / Globals.ZANZ;
-
-      for (int i = 0; i < Globals.SANZZANZ; i++) {
-        switch (FSM.ss.spielfeld[i]) {
-          case SPIELER:
-            e.gc.setBackground(display.getSystemColor(SWT.COLOR_BLUE));
-            break;
-          case FREI:
-            e.gc.setBackground(display.getSystemColor(SWT.COLOR_DARK_GRAY));
-            break;
-          case COMP:
-            e.gc.setBackground(display.getSystemColor(SWT.COLOR_RED));
-            break;
-        }
-        int col = i / Globals.SANZ;
-        int row = i % Globals.ZANZ;
-        e.gc.fillOval(row * w + 3, col * h + 3, w - 3, h - 3);
-        int x = row * w + 4 * w / Globals.SANZ;
-        int y = col * h + 4 * h / Globals.ZANZ;
-        e.gc.drawString(String.format("%2d", i), x, y);
-      }
-    }
+  private String statusMessage(FiveStraightModel FSM) {
+    return FSM.ss.getStatusString();
   }
 
   public FiveStraightView(FiveStraightModel FSM, Shell parentShell) {
@@ -94,134 +74,112 @@ public class FiveStraightView extends ApplicationWindow {
 
   @Override
   protected Control createContents(Composite parent) {
-    sh = getShell();
-    display = sh.getDisplay();
+    shell = getShell();
+    display = shell.getDisplay();
 
-    sh.setText("FiveStraight");
-    sh.setSize(600, 700);
-    sh.setImage(new Image(display, "src/org/eb/FiveStraight/icons/FiveStraight.gif"));
+    shell.setText("FiveStraight");
+    shell.setSize(600, 700);
+    shell.setImage(new Image(display, "src/org/eb/FiveStraight/icons/FiveStraight.gif"));
 
-    waitCursor = new Cursor(sh.getDisplay(), SWT.CURSOR_WAIT);
+    waitCursor = new Cursor(display, SWT.CURSOR_WAIT);
 
-    canvas = new Canvas(sh, SWT.BORDER);
+    canvas = new Canvas(shell, SWT.BORDER);
     canvas.setBackground(display.getSystemColor(SWT.COLOR_GRAY));
     canvas.addPaintListener(new PaintListener() {
       @Override
       public void paintControl(PaintEvent e) {
-        int w = canvas.getClientArea().width / Globals.SANZ;
-        int h = canvas.getClientArea().height / Globals.ZANZ;
+        int w = canvas.getClientArea().width / Constants.NUMBEROFCOLUMNS;
+        int h = canvas.getClientArea().height / Constants.NUMBEROFROWS;
 
-        for (int i = 0; i < Globals.SANZZANZ; i++) {
-          switch (FSM.ss.spielfeld[i]) {
-            case SPIELER:
+        for (int i = 0; i < Constants.NUMBEROFFIELDS; i++) {
+          switch (FSM.ss.gamingBoard[i]) {
+            case PLAYER2:
               e.gc.setBackground(display.getSystemColor(SWT.COLOR_BLUE));
               break;
-            case FREI:
+            case EMPTY:
               e.gc.setBackground(display.getSystemColor(SWT.COLOR_DARK_GRAY));
               break;
-            case COMP:
+            case PLAYER1:
               e.gc.setBackground(display.getSystemColor(SWT.COLOR_RED));
               break;
           }
-          int col = i / Globals.SANZ;
-          int row = i % Globals.SANZ;
+          int col = i / Constants.NUMBEROFCOLUMNS;
+          int row = i % Constants.NUMBEROFCOLUMNS;
           e.gc.fillOval(row * w + 3, col * h + 3, w - 3, h - 3);
-          int x = row * w + 4 * w / Globals.SANZ;
-          int y = col * h + 4 * h / Globals.ZANZ;
+          int x = row * w + 4 * w / Constants.NUMBEROFCOLUMNS;
+          int y = col * h + 4 * h / Constants.NUMBEROFROWS;
           e.gc.drawString(String.format("%2d", i), x, y);
         }
       }
     });
+
     canvas.addKeyListener(new KeyAdapter() {
       @Override
       public void keyPressed(KeyEvent e) {
         if ((e.stateMask & SWT.CTRL) != 0) {
           if (((char) e.keyCode) == 's') {
-            FSM.SaveGame("/temp/s.txt");
+            FSM.saveGame("/temp/s.txt");
           }
           if (((char) e.keyCode) == 'l') {
-            FSM.LoadGame("/temp/s.txt");
+            FSM.loadGame("/temp/s.txt");
             canvas.redraw();
-            String msg = String.format("Mein Zug:%d GWOffen:%d Val:%d c:(%d,%d,%d,%d) s:(%d,%d,%d,%d)", FSM.ss.letzterzug,
-                    FSM.ss.groffen, FSM.ss.wertDerStellung, FSM.ss.cvier, FSM.ss.cdrei, FSM.ss.czwei, FSM.ss.ceins,
-                    FSM.ss.svier, FSM.ss.sdrei, FSM.ss.szwei, FSM.ss.seins);
-            sm.setMessage(msg);
+            statusbarManager.setMessage(statusMessage(FSM));
           }
         }
       }
     });
-    canvas.addMouseListener(new MouseListener() {
-      @Override
-      public void mouseDoubleClick(MouseEvent e) {
-      }
-
-      @Override
-      public void mouseDown(MouseEvent e) {
-      }
+    canvas.addMouseListener(new MouseAdapter() {
 
       @Override
       public void mouseUp(MouseEvent e) {
         int h = canvas.getClientArea().height;
         int w = canvas.getClientArea().width;
-        double z = ((double) e.y / (double) h) * Globals.ZANZ;
-        double s = ((double) e.x / (double) w) * Globals.SANZ;
-        int zug = (int) z * Globals.SANZ + (int) s;
+        double row = ((double) e.y / (double) h) * Constants.NUMBEROFROWS;
+        double col = ((double) e.x / (double) w) * Constants.NUMBEROFCOLUMNS;
+        int fieldNumber = (int) row * Constants.NUMBEROFCOLUMNS + (int) col;
 
-        if (FSM.ss.amzug == FeldWerte.COMP) {
-          sm.setMessage("Du bist nicht am Zug!");
-          display.beep();
-          MessageBox("Warning", "Du bist nicht am Zug!");
+        if (FSM.ss.whosOnTurn == ValuesOfFields.PLAYER1) {
+          myMessageBox("Warning", "Du bist nicht am Zug!");
           return;
         }
-        if (FSM.ss.muehle || FSM.ss.anzahlFelderBesetzt >= Globals.SANZZANZ) {
-          sm.setMessage("Spiel ist schon aus!");
-          display.beep();
-          MessageBox("Warning", "Das Spiel ist schon aus");
+        if (FSM.ss.isMill || FSM.ss.numberOfFieldsOccupied >= Constants.NUMBEROFFIELDS) {
+          myMessageBox("Warning", "Das Spiel ist schon aus");
           return;
         }
-        if (FSM.ss.spielfeld[zug] != FeldWerte.FREI) {
-          sm.setMessage("Dieses Feld ist schon besetzt!");
+        if (FSM.ss.gamingBoard[fieldNumber] != ValuesOfFields.EMPTY) {
           display.beep();
+          statusbarManager.setMessage("Dieses Feld ist schon besetzt!");
           return;
         }
 
-        FSM.ziehen(zug);
+        FSM.makeMove(fieldNumber);
         canvas.redraw();
-        sh.update();
+        shell.update();
 
-        if (FSM.ss.muehle) {
-          sm.setMessage("Gratuliere, Du hast gewonnen!");
-          display.beep();
-          MessageBox("FiveStraight", "Gratuliere, Du hast gewonnen!");
+        if (FSM.ss.isMill) {
+          myMessageBox("FiveStraight", "Gratuliere, Du hast gewonnen!");
           return;
-
         }
-        if (FSM.ss.anzahlFelderBesetzt == Globals.SANZZANZ || FSM.ss.groffen == 0) {
-          sm.setMessage("Gratuliere, Du hast ein Remis geschafft!");
-          display.beep();
-          MessageBox("FiveStraight", "Gratuliere, Du hast ein Remis geschafft!");
+        if (FSM.ss.numberOfFieldsOccupied == Constants.NUMBEROFFIELDS || FSM.ss.numberOfOpenWinningRows == 0) {
+          myMessageBox("FiveStraight", "Gratuliere, Du hast ein Remis geschafft!");
           return;
         }
 
-        sh.setCursor(waitCursor);
-        FSM.computerzug();
+        shell.setCursor(waitCursor);
+        FSM.moveOfComputer();
+
         canvas.redraw();
-        sh.setCursor(null);
+        shell.setCursor(null);
+        statusbarManager.setMessage(statusMessage(FSM));
 
-        String msg = String.format("Mein Zug:%d GWOffen:%d Val:%d c:(%d,%d,%d,%d) s:(%d,%d,%d,%d)", FSM.ss.letzterzug,
-                FSM.ss.groffen, FSM.ss.wertDerStellung, FSM.ss.cvier, FSM.ss.cdrei, FSM.ss.czwei, FSM.ss.ceins,
-                FSM.ss.svier, FSM.ss.sdrei, FSM.ss.szwei, FSM.ss.seins);
-        sm.setMessage(msg);
-
-        if (FSM.ss.muehle) {
-          display.beep();
-          MessageBox("FiveStraight", "Bedaure Du hast verloren!");
-        } else if (FSM.ss.anzahlFelderBesetzt == Globals.SANZZANZ || FSM.ss.groffen == 0) {
-          display.beep();
-          MessageBox("FiveStraight", "Gratuliere, Du hast ein Remis geschafft!");
+        if (FSM.ss.isMill) {
+          myMessageBox("FiveStraight", "Bedaure Du hast verloren!");
+        } else if (FSM.ss.numberOfFieldsOccupied == Constants.NUMBEROFFIELDS || FSM.ss.numberOfOpenWinningRows == 0) {
+          myMessageBox("FiveStraight", "Gratuliere, Du hast ein Remis geschafft!");
         }
       }
     });
+
     canvas.setFocus();
     return canvas;
   }
@@ -230,17 +188,17 @@ public class FiveStraightView extends ApplicationWindow {
   protected MenuManager createMenuManager() {
 
     MenuManager smenu = new MenuManager("Spiel");
-    smenu.add(act_NeuesSpiel);
-    smenu.add(act_ZugZurueckNehmen);
-    smenu.add(act_Beenden);
+    smenu.add(action_NewGame);
+    smenu.add(action_UndoMove);
+    smenu.add(action_StopPlaying);
 
     MenuManager omenu = new MenuManager("Optionen");
-    ActionSpielStaerkeSetzen a1 = new ActionSpielStaerkeSetzen(4);
-    ActionSpielStaerkeSetzen a2 = new ActionSpielStaerkeSetzen(5);
-    ActionSpielStaerkeSetzen a3 = new ActionSpielStaerkeSetzen(6);
-    ActionSpielStaerkeSetzen a4 = new ActionSpielStaerkeSetzen(7);
-    ActionSpielStaerkeSetzen a5 = new ActionSpielStaerkeSetzen(8);
-    switch (FSM.MaxLevel) {
+    ActionSetLevel a1 = new ActionSetLevel(4);
+    ActionSetLevel a2 = new ActionSetLevel(5);
+    ActionSetLevel a3 = new ActionSetLevel(6);
+    ActionSetLevel a4 = new ActionSetLevel(7);
+    ActionSetLevel a5 = new ActionSetLevel(8);
+    switch (FSM.ss.maxLevel) {
       case 4:
         a1.setChecked(true);
         break;
@@ -267,51 +225,51 @@ public class FiveStraightView extends ApplicationWindow {
     Action aa = new Action("Computer beginnt", Action.AS_CHECK_BOX) {
       @Override
       public void run() {
-        FSM.CompBeginnt = !FSM.CompBeginnt;
+        FSM.player1Begins = !FSM.player1Begins;
       }
     };
-    aa.setChecked(FSM.CompBeginnt);
+    aa.setChecked(FSM.player1Begins);
     omenu.add(aa);
 
     MenuManager hmenu = new MenuManager("Hilfe");
     hmenu.add(new Action("Info über FiveStraight") {
       @Override
       public void run() {
-        MessageBox mb = new MessageBox(sh, SWT.OK);
+        MessageBox mb = new MessageBox(shell, SWT.OK);
         mb.setText("Info über FiveStraight");
         mb.setMessage("FiveStraight Version1.0\n\nCopyright (C) 2005");
         mb.open();
       }
     });
 
-    MenuManager main_menu = new MenuManager(null);
-    main_menu.add(smenu);
-    main_menu.add(omenu);
-    main_menu.add(hmenu);
-    return main_menu;
+    MenuManager mainMenu = new MenuManager(null);
+    mainMenu.add(smenu);
+    mainMenu.add(omenu);
+    mainMenu.add(hmenu);
+    return mainMenu;
   }
 
   @Override
   protected StatusLineManager createStatusLineManager() {
-    this.sm = new StatusLineManager();
-    return sm;
+    this.statusbarManager = new StatusLineManager();
+    return statusbarManager;
   }
 
   @Override
   protected ToolBarManager createToolBarManager(int style) {
-    ToolBarManager tool_bar_manager = new ToolBarManager(style);
-    tool_bar_manager.add(act_NeuesSpiel);
-    tool_bar_manager.add(act_ZugZurueckNehmen);
-    tool_bar_manager.add(act_Beenden);
-    return tool_bar_manager;
+    ToolBarManager toolbarManager = new ToolBarManager(style);
+    toolbarManager.add(action_NewGame);
+    toolbarManager.add(action_UndoMove);
+    toolbarManager.add(action_StopPlaying);
+    return toolbarManager;
   }
 
   // //////////////////////////////////////////////////////////
   // Actions!!
   // //////////////////////////////////////////////////////////
-  class ActionNeuesSpiel extends Action {
+  class ActionNewGame extends Action {
 
-    public ActionNeuesSpiel() {
+    public ActionNewGame() {
       super("&Neues Spiel@Ctrl+N", AS_PUSH_BUTTON);
       setToolTipText("Neues Spiel starten");
       setImageDescriptor(ImageDescriptor.createFromFile(null, "src/org/eb/FiveStraight/icons/NeuesSpiel.gif"));
@@ -319,17 +277,17 @@ public class FiveStraightView extends ApplicationWindow {
 
     @Override
     public void run() {
-      sh.setCursor(waitCursor);
-      FSM.NeuesSpiel();
-      sh.setCursor(null);
+      shell.setCursor(waitCursor);
+      FSM.newGame();
+      shell.setCursor(null);
       canvas.redraw();
-      sm.setMessage("Neues Spiel gestartet!!");
+      statusbarManager.setMessage("Neues Spiel gestartet!!");
     }
   }
 
-  class ActionZugZurueckNehmen extends Action {
+  class ActionUndoMove extends Action {
 
-    public ActionZugZurueckNehmen() {
+    public ActionUndoMove() {
       super("Zug Zurücknehmen@Ctrl+Z", AS_PUSH_BUTTON);
       setToolTipText("Zug Zurücknehmen");
       setImageDescriptor(ImageDescriptor.createFromFile(null, "src/org/eb/FiveStraight/icons/ZugZurückNehmen.gif"));
@@ -337,18 +295,15 @@ public class FiveStraightView extends ApplicationWindow {
 
     @Override
     public void run() {
-      FSM.ZugZurueck();
+      FSM.undoMove();
       canvas.redraw();
-      String msg = String.format("Mein Zug:%d GWOffen:%d Val:%d c:(%d,%d,%d,%d) s:(%d,%d,%d,%d)", FSM.ss.letzterzug,
-              FSM.ss.groffen, FSM.ss.wertDerStellung, FSM.ss.cvier, FSM.ss.cdrei, FSM.ss.czwei, FSM.ss.ceins,
-              FSM.ss.svier, FSM.ss.sdrei, FSM.ss.szwei, FSM.ss.seins);
-      sm.setMessage(msg);
+      statusbarManager.setMessage(FSM.ss.getStatusString());
     }
   };
 
-  class ActionBeenden extends Action {
+  class ActionStopPlaying extends Action {
 
-    public ActionBeenden() {
+    public ActionStopPlaying() {
       super("&Beenden", AS_PUSH_BUTTON);
       setToolTipText("Programm beenden");
       setImageDescriptor(ImageDescriptor.createFromFile(null, "src/org/eb/FiveStraight/icons/Beenden.gif"));
@@ -356,44 +311,44 @@ public class FiveStraightView extends ApplicationWindow {
 
     @Override
     public void run() {
-      sh.close();
+      shell.close();
     }
   }
 
-  static final String[] SPIELSTAERKESTRING = {"---", "---", "---", "---", "Anfänger", "Fortgeschrittener", "Meister", "Großmeister", "Weltmeister", "---"};
+  static final String[] STRING_OF_SKILL_LEVELS = {"---", "---", "---", "---", "Anfänger", "Fortgeschrittener", "Meister", "Großmeister", "Weltmeister", "---"};
 
-  class ActionSpielStaerkeSetzen extends Action {
+  class ActionSetLevel extends Action {
 
-    int MaxLevel;
+    int maxLevel;
 
-    public ActionSpielStaerkeSetzen(int MaxLevel) {
-      super(SPIELSTAERKESTRING[MaxLevel], AS_RADIO_BUTTON);
-      this.MaxLevel = MaxLevel;
-      setToolTipText("Spielstärke:" + Arrays.toString(SPIELSTAERKESTRING));
+    public ActionSetLevel(int maxLevel) {
+      super(STRING_OF_SKILL_LEVELS[maxLevel], AS_RADIO_BUTTON);
+      setToolTipText("Spielstärke:" + Arrays.toString(STRING_OF_SKILL_LEVELS));
+      this.maxLevel = maxLevel;
     }
 
     @Override
     public void run() {
-      FSM.MaxLevel = MaxLevel;
-      sm.setMessage("Spielstärke " + SPIELSTAERKESTRING[MaxLevel] + " eingestellt");
+      FSM.ss.maxLevel = maxLevel;
+      statusbarManager.setMessage("Spielstärke " + STRING_OF_SKILL_LEVELS[maxLevel] + " eingestellt.");
     }
   }
 
-  // //////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////
   public static void main(String[] args) {
     FiveStraightModel FSM = new FiveStraightModel();
-    FSM.MaxLevel = 5;
-    FSM.CompBeginnt = true;
-    FSM.ss.init(FSM.CompBeginnt ? FeldWerte.COMP : FeldWerte.SPIELER);
+    FSM.ss.maxLevel = 5;
+    FSM.player1Begins = true;
+    FSM.ss.init(FSM.player1Begins ? ValuesOfFields.PLAYER1 : ValuesOfFields.PLAYER2);
     /*
 		 * FSM.vgziehen(54, FSM.ss); FSM.vgziehen(1, FSM.ss); FSM.vgziehen(55,
 		 * FSM.ss); FSM.vgziehen(6, FSM.ss); FSM.vgziehen(67, FSM.ss);
 		 * FSM.vgziehen(10, FSM.ss); FSM.vgziehen(78, FSM.ss); FSM.vgziehen(0,
 		 * FSM.ss);
      */
-    FSM.computerzug();
-    FiveStraightView fsw = new FiveStraightView(FSM, null);
-    fsw.setBlockOnOpen(true);
-    fsw.open();
+    FSM.moveOfComputer();
+    FiveStraightView fsv = new FiveStraightView(FSM, null);
+    fsv.setBlockOnOpen(true);
+    fsv.open();
   }
 }

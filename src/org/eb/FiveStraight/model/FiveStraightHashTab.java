@@ -1,4 +1,4 @@
-package org.eb.FiveStraight;
+package org.eb.FiveStraight.model;
 
 import java.util.HashMap;
 
@@ -49,7 +49,7 @@ public class FiveStraightHashTab {
     return hash;
   }
 
-  static void insert(SpielStand ss, int val, int lev) {
+  static void insert(StateOfGame ss, int val, int lev) {
     if (lev < 2 || lev > 4) {
       return;
     }
@@ -58,7 +58,7 @@ public class FiveStraightHashTab {
     hs.put(h, val);
   }
 
-  static public int getVal(SpielStand ss, int lev) {
+  static public int getVal(StateOfGame ss, int lev) {
     if (lev < 2 || lev > 4) {
       return -100000;
     }
