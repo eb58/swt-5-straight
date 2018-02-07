@@ -4,7 +4,7 @@ import java.util.HashMap;
 
 public class FiveStraightHashTab {
 
-  static HashMap<Long, Integer> hs = new HashMap<Long, Integer>();
+  static HashMap<String, Integer> hs = new HashMap<String, Integer>();
 
   static void iniths() {
     hs.clear();
@@ -42,7 +42,7 @@ public class FiveStraightHashTab {
   }
 
   static public long DJBHash(String str) {
-    int hash = 5381;
+    long hash = 5381;
     for (int i = 0; i < str.length(); i++) {
       hash = ((hash << 5) + hash) + str.charAt(i);
     }
@@ -50,21 +50,21 @@ public class FiveStraightHashTab {
   }
 
   static void insert(StateOfGame ss, int val, int lev) {
-    if (lev < 2 || lev > 4) {
-      return;
-    }
     String s = ss.toString();
-    long h = APHash(s);
-    hs.put(h, val);
+    //System.out.println("insert" + s + " val:" + val + " Size of Hashtable:" + hs.size());
+    long h = DJBHash(s);
+    hs.put(s, val);
   }
 
-  static public int getVal(StateOfGame ss, int lev) {
-    if (lev < 2 || lev > 4) {
-      return -100000;
-    }
+  static public Integer getVal(StateOfGame ss) {
     String s = ss.toString();
-    Long n = APHash(s);
-    Integer val = hs.get(n);
-    return val == null ? -100000 : val;
+    Long n = DJBHash(s);
+    Integer val = hs.get(s);
+    if (val != null) {
+      System.out.println("AAA" + s + " val:" + val + " hash:" + s + " Size of Hashtable:" + hs.size());
+      //System.out.println("HASHTABLE --- " +  hs.toString());
+
+    }
+    return val;
   }
 }

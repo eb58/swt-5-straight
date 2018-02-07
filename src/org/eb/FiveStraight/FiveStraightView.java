@@ -3,7 +3,7 @@ package org.eb.FiveStraight;
 import org.eb.FiveStraight.model.FiveStraightModel;
 import org.eb.FiveStraight.util.Constants;
 import java.util.Arrays;
-import org.eb.FiveStraight.util.ValuesOfFields;
+import org.eb.FiveStraight.util.TypeOfFields;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
@@ -60,14 +60,14 @@ public class FiveStraightView extends ApplicationWindow {
 
     for (int i = 0; i < Constants.NUMBEROFFIELDS; i++) {
       switch (FSM.ss.gamingBoard[i]) {
+        case PLAYER1:
+          gc.setBackground(display.getSystemColor(SWT.COLOR_RED));
+          break;
         case PLAYER2:
           gc.setBackground(display.getSystemColor(SWT.COLOR_BLUE));
           break;
         case EMPTY:
           gc.setBackground(display.getSystemColor(SWT.COLOR_DARK_GRAY));
-          break;
-        case PLAYER1:
-          gc.setBackground(display.getSystemColor(SWT.COLOR_RED));
           break;
       }
       int col = i / Constants.NUMBEROFCOLUMNS;
@@ -150,7 +150,7 @@ public class FiveStraightView extends ApplicationWindow {
       public void mouseUp(MouseEvent e) {
         int fieldNumber = getFieldNumberFromClickEvent(e);
 
-        if (FSM.ss.whosOnTurn == ValuesOfFields.PLAYER1) {
+        if (FSM.ss.whosOnTurn == TypeOfFields.PLAYER1) {
           myMessageBox("Warning", "Du bist nicht am Zug!");
           return;
         }
@@ -158,7 +158,7 @@ public class FiveStraightView extends ApplicationWindow {
           myMessageBox("Warning", "Das Spiel ist schon aus");
           return;
         }
-        if (FSM.ss.gamingBoard[fieldNumber] != ValuesOfFields.EMPTY) {
+        if (FSM.ss.gamingBoard[fieldNumber] != TypeOfFields.EMPTY) {
           display.beep();
           statusbarManager.setMessage("Dieses Feld ist schon besetzt!");
           return;
@@ -341,7 +341,7 @@ public class FiveStraightView extends ApplicationWindow {
     FiveStraightModel FSM = new FiveStraightModel();
     FSM.ss.maxLevel = 5;
     FSM.player1Begins = true;
-    FSM.ss.init(FSM.player1Begins ? ValuesOfFields.PLAYER1 : ValuesOfFields.PLAYER2);
+    FSM.ss.init(FSM.player1Begins ? TypeOfFields.PLAYER1 : TypeOfFields.PLAYER2);
     /*
 		 * FSM.vgziehen(54, FSM.ss); FSM.vgziehen(1, FSM.ss); FSM.vgziehen(55,
 		 * FSM.ss); FSM.vgziehen(6, FSM.ss); FSM.vgziehen(67, FSM.ss);

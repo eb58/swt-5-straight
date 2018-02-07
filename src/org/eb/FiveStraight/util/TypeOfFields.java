@@ -1,5 +1,5 @@
 package org.eb.FiveStraight.util;
 
-public enum ValuesOfFields {
+public enum TypeOfFields {
   PLAYER1, EMPTY, PLAYER2
 };

@@ -1,7 +1,7 @@
 package org.eb.FiveStraight.model;
 
 import org.eb.FiveStraight.util.TypeOfWinningRow;
-import org.eb.FiveStraight.util.ValuesOfFields;
+import org.eb.FiveStraight.util.TypeOfFields;
 import org.eb.FiveStraight.util.Constants;
 import java.util.ArrayList;
 
@@ -17,32 +17,32 @@ public final class StateOfGame implements Cloneable {
   private int twosOfPlayer1, twosOfPlayer2;
   private int threesOfPlayer1, threesOfPlayer2;
   private int foursOfPlayer1, foursOfPlayer2;
+  private int lastMove;
 
-  public ValuesOfFields[] gamingBoard;
-  public ValuesOfFields whosOnTurn;
+  public TypeOfFields[] gamingBoard;
+  public TypeOfFields whosOnTurn;
 
   public int maxLevel;
   public int numberOfOpenWinningRows;
   public int valueOfPlayingPosition;
   public int numberOfFieldsOccupied;
-  public int lastMove;
   public int bestMove;
   public boolean isMill;
 
   // ////////////////////////////////////////////////////
   StateOfGame() {
-    gamingBoard = new ValuesOfFields[Constants.NUMBEROFFIELDS];
-    grbesetzt = new TypeOfWinningRow[WinningRows.winningRows.length];
-    granz = new int[WinningRows.winningRows.length];
-    init(ValuesOfFields.PLAYER1);
+    gamingBoard = new TypeOfFields[Constants.NUMBEROFFIELDS];
+    grbesetzt = new TypeOfWinningRow[StaticGameData.winningRows.size()];
+    granz = new int[StaticGameData.winningRows.size()];
+    init(TypeOfFields.PLAYER1);
   }
 
-  public void init(ValuesOfFields _whoOnTurn) {
+  public void init(TypeOfFields _whoOnTurn) {
     for (int i = 0; i < Constants.NUMBEROFFIELDS; i++) {
-      gamingBoard[i] = ValuesOfFields.EMPTY;
+      gamingBoard[i] = TypeOfFields.EMPTY;
     }
 
-    for (int i = 0; i < WinningRows.winningRows.length; i++) {
+    for (int i = 0; i < StaticGameData.winningRows.size(); i++) {
       grbesetzt[i] = TypeOfWinningRow.EMPTY;
       granz[i] = 0;
     }
@@ -57,7 +57,7 @@ public final class StateOfGame implements Cloneable {
     foursOfPlayer2 = 0;
     isMill = false;
     whosOnTurn = _whoOnTurn;
-    numberOfOpenWinningRows = WinningRows.winningRows.length;
+    numberOfOpenWinningRows = StaticGameData.winningRows.size();
   }
 
   @Override
@@ -84,22 +84,21 @@ public final class StateOfGame implements Cloneable {
   }
 
   void makeMove(int z) {
-    int gew[] = WinningRows.winningRowsForField[z];
+    ArrayList<Integer> gew = StaticGameData.winningRowsForField.get(z);
 
-    for (int i = 0; i < gew.length; i++) {
-      int j = gew[i];
+    for (Integer j : gew) {
       switch (grbesetzt[j]) {
         case EMPTY:
-          grbesetzt[j] = whosOnTurn == ValuesOfFields.PLAYER1 ? TypeOfWinningRow.PLAYER1 : TypeOfWinningRow.PLAYER2;
+          grbesetzt[j] = whosOnTurn == TypeOfFields.PLAYER1 ? TypeOfWinningRow.PLAYER1 : TypeOfWinningRow.PLAYER2;
           granz[j] = 1;
-          if (whosOnTurn == ValuesOfFields.PLAYER2) {
+          if (whosOnTurn == TypeOfFields.PLAYER2) {
             onesOfPlayer2++;
           } else {
             onesOfPlayer1++;
           }
           break;
         case PLAYER2:
-          if (whosOnTurn == ValuesOfFields.PLAYER1) {
+          if (whosOnTurn == TypeOfFields.PLAYER1) {
             int anz = granz[j];
             grbesetzt[j] = TypeOfWinningRow.NEUTRAL;
             foursOfPlayer2 -= anz == 4 ? 1 : 0;
@@ -127,7 +126,7 @@ public final class StateOfGame implements Cloneable {
           }
           break;
         case PLAYER1:
-          if (whosOnTurn == ValuesOfFields.PLAYER2) {
+          if (whosOnTurn == TypeOfFields.PLAYER2) {
             int anz = granz[j];
             grbesetzt[j] = TypeOfWinningRow.NEUTRAL;
             foursOfPlayer1 -= anz == 4 ? 1 : 0;
@@ -160,12 +159,12 @@ public final class StateOfGame implements Cloneable {
     }
     lastMove = z;
     gamingBoard[z] = whosOnTurn;
-    whosOnTurn = whosOnTurn == ValuesOfFields.PLAYER1 ? ValuesOfFields.PLAYER2 : ValuesOfFields.PLAYER1;
+    whosOnTurn = whosOnTurn == TypeOfFields.PLAYER1 ? TypeOfFields.PLAYER2 : TypeOfFields.PLAYER1;
     numberOfFieldsOccupied++;
   }
 
   boolean isActiveField(int fieldNumber) {
-    if (gamingBoard[fieldNumber] != ValuesOfFields.EMPTY) {
+    if (gamingBoard[fieldNumber] != TypeOfFields.EMPTY) {
       return false;
     }
 
@@ -177,11 +176,12 @@ public final class StateOfGame implements Cloneable {
             && Math.abs(col + 1 - Constants.NUMBEROFCOLUMNS / 2) <= 1) {
       return true;
     }
-    if (numberOfFieldsOccupied > 2 * Constants.NUMBEROFFIELDS / 3) { // ab hier sind alle Felder aktiv!
+    if (numberOfFieldsOccupied > 2 * Constants.NUMBEROFFIELDS / 3) {
+      // all fields are active if so many fields are occupied!
       return true;
     }
-    for (int n : WinningRows.neighbours[fieldNumber]) {
-      if (gamingBoard[n] != ValuesOfFields.EMPTY) {
+    for (Integer n : StaticGameData.neighbours.get(fieldNumber)) {
+      if (gamingBoard[n] != TypeOfFields.EMPTY) {
         return true;
       }
     }
@@ -200,106 +200,96 @@ public final class StateOfGame implements Cloneable {
     }
   }
 
-  int addMoves(ArrayList<Integer> zugvec, int anz, TypeOfWinningRow typ) {
-    for (int i = 0; i < WinningRows.winningRows.length; i++) {
+  int addMoves(ArrayList<Integer> moves, int anz, TypeOfWinningRow typ) {
+    for (int i = 0, len = StaticGameData.winningRows.size(); i < len; i++) {
       if (granz[i] == anz && grbesetzt[i] == typ) {
-        int gr[] = WinningRows.winningRows[i];
-        for (int z : gr) {
-          if (isActiveVec[z] && !isInVec[z]) {
-            isInVec[z] = true;
-            zugvec.add(z);
+        for (int move : StaticGameData.winningRows.get(i)) {
+          if (isActiveVec[move] && !isInVec[move]) {
+            isInVec[move] = true;
+            moves.add(move);
           }
         }
       }
     }
-    return zugvec.size();
+    return moves.size();
   }
 
-  void generatePossibleMove(ArrayList<Integer> zugvec) {
+  void generatePossibleMove(ArrayList<Integer> moves) {
     initAddMoves();
-    TypeOfWinningRow gw1 = whosOnTurn == ValuesOfFields.PLAYER1 ? TypeOfWinningRow.PLAYER1 : TypeOfWinningRow.PLAYER2;
-    TypeOfWinningRow gw2 = whosOnTurn == ValuesOfFields.PLAYER1 ? TypeOfWinningRow.PLAYER2 : TypeOfWinningRow.PLAYER1;
+    TypeOfWinningRow gw1 = whosOnTurn == TypeOfFields.PLAYER1 ? TypeOfWinningRow.PLAYER1 : TypeOfWinningRow.PLAYER2;
+    TypeOfWinningRow gw2 = whosOnTurn == TypeOfFields.PLAYER1 ? TypeOfWinningRow.PLAYER2 : TypeOfWinningRow.PLAYER1;
 
-    if (addMoves(zugvec, 4, gw1) > 0) {
+    if (addMoves(moves, 4, gw1) > 0) {
       return;
     }
-    if (addMoves(zugvec, 4, gw2) > 0) {
+    if (addMoves(moves, 4, gw2) > 0) {
       return;
     }
-    addMoves(zugvec, 3, gw1);
-    addMoves(zugvec, 3, gw2);
-    addMoves(zugvec, 2, gw1);
-    addMoves(zugvec, 2, gw2);
-    if (zugvec.isEmpty()) {
-      addMoves(zugvec, 1, gw1);
+    addMoves(moves, 3, gw1);
+    addMoves(moves, 3, gw2);
+    addMoves(moves, 2, gw1);
+    addMoves(moves, 2, gw2);
+    if (moves.isEmpty()) {
+      addMoves(moves, 1, gw1);
     }
-    if (zugvec.isEmpty()) {
-      addMoves(zugvec, 1, gw2);
+    if (moves.isEmpty()) {
+      addMoves(moves, 1, gw2);
     }
-    if (zugvec.isEmpty()) {
-      addMoves(zugvec, 0, TypeOfWinningRow.EMPTY);
+    if (moves.isEmpty()) {
+      addMoves(moves, 0, TypeOfWinningRow.EMPTY);
     }
   }
 
-  void generateForcedMoves(ArrayList<Integer> zugvec) {
+  void generateForcedMoves(ArrayList<Integer> moves) {
     // Berechne alle zwingenden Zuege
     initAddMoves();
-    TypeOfWinningRow gw1 = whosOnTurn == ValuesOfFields.PLAYER1 ? TypeOfWinningRow.PLAYER1 : TypeOfWinningRow.PLAYER2;
-    TypeOfWinningRow gw2 = whosOnTurn == ValuesOfFields.PLAYER1 ? TypeOfWinningRow.PLAYER2 : TypeOfWinningRow.PLAYER1;
+    TypeOfWinningRow gw1 = whosOnTurn == TypeOfFields.PLAYER1 ? TypeOfWinningRow.PLAYER1 : TypeOfWinningRow.PLAYER2;
+    TypeOfWinningRow gw2 = whosOnTurn == TypeOfFields.PLAYER1 ? TypeOfWinningRow.PLAYER2 : TypeOfWinningRow.PLAYER1;
 
-    if (addMoves(zugvec, 4, gw1) > 0) {
+    if (addMoves(moves, 4, gw1) > 0) {
       return;
     }
-    addMoves(zugvec, 4, gw2);
+    addMoves(moves, 4, gw2);
   }
 
-  int wertDerStellungFuerPlayer1() {
-    return foursOfPlayer1 > 1 ? 128 : 0 - foursOfPlayer2 > 1 ? 64 : 0 + 16 * (threesOfPlayer1 - threesOfPlayer2) + 4 * (twosOfPlayer1 - twosOfPlayer2) + (onesOfPlayer1 - onesOfPlayer2);
+  int valueForPlayer1() {
+    return (foursOfPlayer1 > 1 ? 128 : 0) - (foursOfPlayer2 > 1 ? 64 : 0) + 16 * (threesOfPlayer1 - threesOfPlayer2) + 4 * (twosOfPlayer1 - twosOfPlayer2) + (onesOfPlayer1 - onesOfPlayer2);
   }
 
-  int alphaBeta(int lev, int alpha, int beta) {
-    // Liefert Wert der Stellung ss aus Sicht der Seite, die am Zug ist!
-    // Setzt außerdem den Wert ss.zug als den besten Zug fuer diese Stellung!
+  int alphaBeta(int lev, int alpha, int beta) {   // computes the value of game in point of view of player who turn it is
 
     nodesInTreeOfGame++;
 
     if (isMill) {
-      FiveStraightHashTab.insert(this, -MAXVAL + lev, lev);
       return -MAXVAL + lev;
     }
 
     if (numberOfFieldsOccupied > Constants.NUMBEROFFIELDS || numberOfOpenWinningRows == 0) {
       return 0; // Remis!
     }
-    int val = FiveStraightHashTab.getVal(this, lev);
-    if (val != -100000) {
-      return val;
-    }
 
-    ArrayList<Integer> zugvec = new ArrayList<>();
+    ArrayList<Integer> moves = new ArrayList<>();
     if (lev >= maxLevel && lev <= maxLevel + 8) {
-      generateForcedMoves(zugvec);
+      generateForcedMoves(moves);
     } else {
-      generatePossibleMove(zugvec);
+      generatePossibleMove(moves);
     }
 
-    if (zugvec.isEmpty()) {
-      int v = wertDerStellungFuerPlayer1();
-      FiveStraightHashTab.insert(this, this.whosOnTurn == ValuesOfFields.PLAYER1 ? v : -v, lev);
-      return this.whosOnTurn == ValuesOfFields.PLAYER1 ? v : -v;
+    if (moves.isEmpty()) {
+      int v = valueForPlayer1();
+      return this.whosOnTurn == TypeOfFields.PLAYER1 ? v : -v;
     }
 
     ArrayList<StateOfGame> lssvec = new ArrayList<>();
     try {
-      for (int z : zugvec) {// looking for mills
+      for (int move : moves) {// looking for mills
         StateOfGame lss = (StateOfGame) clone();
-        lss.makeMove(z);
+        lss.makeMove(move);
         if (lss.isMill) {
           if (lev == 0) {
-            bestMove = z;
+            bestMove = move;
             valueOfPlayingPosition = MAXVAL - lev;
           }
-          FiveStraightHashTab.insert(this, MAXVAL - lev, lev);
           return MAXVAL - lev;
         }
         lssvec.add(lss);
@@ -307,26 +297,23 @@ public final class StateOfGame implements Cloneable {
     } catch (CloneNotSupportedException ex) {
     }
 
-    int max = -MAXVAL + lev; // wir gehen vom schlimmsten aus;
+    int max = -MAXVAL + lev; // we are assuming the worst case
     for (StateOfGame lss : lssvec) {
-      int w = -lss.alphaBeta(lev + 1, -beta, -alpha);
-      if (w > max) { // neuer bester Wert gefunden
-        max = w;
+      int value = -lss.alphaBeta(lev + 1, -beta, -alpha);
+      if (value > max) { // better value found
+        max = value;
         if (lev == 0) {
           bestMove = lss.lastMove;
           valueOfPlayingPosition = max;
         }
-        if (w >= beta) {
-          // FiveStraightHashTab.insert(this, w, lev);
-          return w;
+        if (value >= beta) {
+          return value;
         }
-        if (w > alpha) {
-          alpha = w;// Verbesserter alpha Wert
+        if (value > alpha) {
+          alpha = value;// better alpha value
         }
       }
     }
-
-    FiveStraightHashTab.insert(this, max, lev);
     return max;
   }
 
@@ -336,7 +323,7 @@ public final class StateOfGame implements Cloneable {
   }
 
   public String getStatusString() {
-    return String.format("Mein Zug:%d GWOffen:%d Val:%d c:(%d,%d,%d,%d) s:(%d,%d,%d,%d)",
+    return String.format("Mein Zug:%d Offene Gewinnreihen:%d Value:%d c:(%d,%d,%d,%d) s:(%d,%d,%d,%d)",
             lastMove,
             numberOfOpenWinningRows,
             valueOfPlayingPosition,

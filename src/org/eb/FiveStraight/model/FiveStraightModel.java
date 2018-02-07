@@ -1,6 +1,6 @@
 package org.eb.FiveStraight.model;
 
-import org.eb.FiveStraight.util.ValuesOfFields;
+import org.eb.FiveStraight.util.TypeOfFields;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -9,22 +9,27 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-// ///////////////////////////////////////////////////////////////////////////////////////////////
 public class FiveStraightModel {
 
   private ArrayList<Integer> moves;	// Spielverlauf
   public boolean player1Begins;
   public StateOfGame ss;
-  
-  // ///////////////////////////////////////////////////////
+
   public FiveStraightModel() {
-    WinningRows.init();
+    //StaticGameData.dump();
     ss = new StateOfGame();
     moves = new ArrayList<>();
     player1Begins = true;
   }
 
-  // //////////////////////////////////////////////////////////////// /
+  public void newGame() {
+    ss.init(player1Begins ? TypeOfFields.PLAYER1 : TypeOfFields.PLAYER2);
+    moves = new ArrayList<>();
+    if (player1Begins) {
+      moveOfComputer();
+    }
+  }
+  
   public void makeMove(int z) {
     ss.makeMove(z);
     moves.add(z);
@@ -40,7 +45,7 @@ public class FiveStraightModel {
       long end = System.currentTimeMillis();
       long tdiff = (end - start) + 1;
 
-      String s = String.format("INFO:Tiefe:%d Knoten:%d Zug:%d Val:%d MilliSec:%d Knoten/Sec:%d",
+      String s = String.format("INFO: Tiefe:%d Knoten:%d Zug:%d Wert:%d MilliSec:%d Knoten/Sec:%d",
               ss.maxLevel,
               StateOfGame.nodesInTreeOfGame,
               ss.bestMove,
@@ -52,19 +57,16 @@ public class FiveStraightModel {
     }
   }
 
-  // //////////////////////////////////////////////////////// /
   public void undoMove() {
-    if (moves.size() <= 1) {
-      return;
-    }
+    if (moves.size() >= 2) {
+      List<Integer> oldMoves = moves.subList(0, moves.size() - 2);
 
-    List<Integer>oldMoves =  moves.subList(0, moves.size() - 2);
-    
-    ss.init(player1Begins ? ValuesOfFields.PLAYER1 : ValuesOfFields.PLAYER2);
-    moves = new ArrayList<>();
-    
-    for (int move : oldMoves) {
-      makeMove(move);
+      ss.init(player1Begins ? TypeOfFields.PLAYER1 : TypeOfFields.PLAYER2);
+      moves = new ArrayList<>();
+
+      for (int move : oldMoves) {
+        makeMove(move);
+      }
     }
   }
 
@@ -85,7 +87,7 @@ public class FiveStraightModel {
   }
 
   public int loadGame(final String fname) {
-    String s = "";
+    String s;
     try (LineNumberReader lnr = new LineNumberReader(new FileReader(fname))) {
       s = lnr.readLine();
     } catch (Exception e) {
@@ -94,7 +96,7 @@ public class FiveStraightModel {
     String arr[] = s.split(" ");
 
     player1Begins = "C".equals(arr[0]);
-    ss.init(player1Begins ? ValuesOfFields.PLAYER1 : ValuesOfFields.PLAYER2);
+    ss.init(player1Begins ? TypeOfFields.PLAYER1 : TypeOfFields.PLAYER2);
     moves = new ArrayList<>();
 
     for (int i = 1; i < arr.length; i++) {
@@ -104,11 +106,4 @@ public class FiveStraightModel {
     return 1;
   }
 
-  public void newGame() {
-    ss.init(player1Begins ? ValuesOfFields.PLAYER1 : ValuesOfFields.PLAYER2);
-    moves = new ArrayList<>();
-    if (player1Begins) {
-      moveOfComputer();
-    }
-  }
 }
