@@ -146,6 +146,29 @@ public class FiveStraightView extends ApplicationWindow {
         return (int) row * Constants.NUMBEROFCOLUMNS + (int) col;
       }
 
+      private Thread threadComputerMove() {
+        shell.setCursor(waitCursor);
+        return new Thread() {
+          @Override
+          public void run() {
+            FSM.moveOfComputer();
+            display.asyncExec(new Runnable() {
+              @Override
+              public void run() {
+                shell.setCursor(null);
+                canvas.redraw();
+                statusbarManager.setMessage(statusMessage(FSM));
+                if (FSM.ss.isMill) {
+                  myMessageBox("FiveStraight", "Bedaure Du hast verloren!");
+                } else if (FSM.ss.numberOfFieldsOccupied == Constants.NUMBEROFFIELDS || FSM.ss.numberOfOpenWinningRows == 0) {
+                  myMessageBox("FiveStraight", "Gratuliere, Du hast ein Remis geschafft!");
+                }
+              }
+            });
+          }
+        };
+      }
+
       @Override
       public void mouseUp(MouseEvent e) {
         int fieldNumber = getFieldNumberFromClickEvent(e);
@@ -177,18 +200,8 @@ public class FiveStraightView extends ApplicationWindow {
           return;
         }
 
-        shell.setCursor(waitCursor);
-        FSM.moveOfComputer();
+        threadComputerMove().start();
 
-        canvas.redraw();
-        shell.setCursor(null);
-        statusbarManager.setMessage(statusMessage(FSM));
-
-        if (FSM.ss.isMill) {
-          myMessageBox("FiveStraight", "Bedaure Du hast verloren!");
-        } else if (FSM.ss.numberOfFieldsOccupied == Constants.NUMBEROFFIELDS || FSM.ss.numberOfOpenWinningRows == 0) {
-          myMessageBox("FiveStraight", "Gratuliere, Du hast ein Remis geschafft!");
-        }
       }
 
     });
@@ -206,7 +219,7 @@ public class FiveStraightView extends ApplicationWindow {
     gameMenu.add(action_StopPlaying);
 
     MenuManager optionsMenu = new MenuManager("Optionen");
-    for (int i = 4; i <= 8; i++) {
+    for (int i = 6; i <= 10; i++) {
       ActionSetLevel action = new ActionSetLevel(i);
       action.setChecked(FSM.ss.maxLevel == i);
       optionsMenu.add(action);
@@ -317,7 +330,7 @@ public class FiveStraightView extends ApplicationWindow {
 
   }
 
-  final static String[] STRING_OF_SKILL_LEVELS = {"---", "---", "---", "---", "Anfänger", "Fortgeschrittener", "Meister", "Großmeister", "Weltmeister", "---"};
+  final static String[] STRING_OF_SKILL_LEVELS = {"---", "---", "---", "---", "----", "----", "Anfänger", "Fortgeschrittener", "Meister", "Großmeister", "Weltmeister"};
 
   class ActionSetLevel extends Action {
 
@@ -339,7 +352,7 @@ public class FiveStraightView extends ApplicationWindow {
 // //////////////////////////////////////////////////////////
   public static void main(String[] args) {
     FiveStraightModel FSM = new FiveStraightModel();
-    FSM.ss.maxLevel = 5;
+    FSM.ss.maxLevel = 7;
     FSM.player1Begins = true;
     FSM.ss.init(FSM.player1Begins ? TypeOfFields.PLAYER1 : TypeOfFields.PLAYER2);
     /*
